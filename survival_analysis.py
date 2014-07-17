@@ -44,9 +44,7 @@ def main(argv):
 		else:
 			inputfile = arg
 
-	print 'Input file is "', inputfile
-
-	df = pd.read_csv(filename)
+	df = pd.read_csv(inputfile)
 	df = df.dropna()
 
 	df['first_purch_date'] = pd.to_datetime(df['first_purch_date'])
@@ -80,7 +78,7 @@ def main(argv):
 		else:
 			kmf_.plot(ax=ax)
 
-# plt.savefig("survival_rates.png")
+plt.savefig("survival_rates.png")
 
 if __name__ == '__main__':
  	main(sys.argv[1:])
