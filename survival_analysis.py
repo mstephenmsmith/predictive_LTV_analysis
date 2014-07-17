@@ -46,7 +46,8 @@ def main(argv):
 
 	print 'Input file is "', inputfile
 
-	df = pd.read_csv(inputfile)
+	df = pd.read_csv(filename)
+	df = df.dropna()
 
 	df['first_purch_date'] = pd.to_datetime(df['first_purch_date'])
 	df['last_purch_date'] = pd.to_datetime(df['last_purch_date'])
@@ -55,21 +56,22 @@ def main(argv):
 
 	all_churn_data = get_churn_data(df, "first_purch_date", "last_purch_date")
 
-	all_churn_data_gt0 = all_churn_data[(all_churn_data.duration > 0) & (all_churn_data.std_freq >=0)]
+	all_churn_data_gt0 = all_churn_data[(all_churn_data.duration > 0) & (all_churn_data.std_freq >=0) & (all_churn_data.mean_freq > 0)]
 
 	buckets = [0,7,14,30,90,400]
 	all_churn_data_gt0["freq_bucket"] = all_churn_data_gt0["mean_freq"]
 	all_churn_data_gt0.freq_bucket = pd.cut(all_churn_data_gt0.freq_bucket, buckets)
 
-	unique_buckets = set(all_churn_data_gt0.freq_bucket.order())
+	unique_buckets = list(set(all_churn_data_gt0.freq_bucket.order()))[1:]
 
 	kmf_buckets = []
 	for bucket in unique_buckets:
 		indices_ = np.where(all_churn_data_gt0.freq_bucket == bucket)
 		T = all_churn_data_gt0['duration'].iloc[indices_]
 		C = all_churn_data_gt0['churn'].iloc[indices_]
-	
-	kmf = KaplanMeierFitter()
+		kmf = KaplanMeierFitter()
+		kmf.fit(T, event_observed = C, label=bucket)
+		kmf_buckets.append(kmf)
 
 	for jj, kmf_ in enumerate(kmf_buckets):
 		print kmf_, kmf_.median_
@@ -80,92 +82,5 @@ def main(argv):
 
 # plt.savefig("survival_rates.png")
 
-def plot_(filename):
-
-	df = pd.read_csv(filename)
-	print df.shape
-	df = df.dropna()
-	print df.shape
-
-	df['first_purch_date'] = pd.to_datetime(df['first_purch_date'])
-	df['last_purch_date'] = pd.to_datetime(df['last_purch_date'])
-
-	print "Getting churn data...."
-
-	all_churn_data = get_churn_data(df, "first_purch_date", "last_purch_date")
-
-	all_churn_data_gt0 = all_churn_data[(all_churn_data.duration > 0) & (all_churn_data.std_freq >=0) & (all_churn_data.mean_freq > 0)]
-
-	buckets = [0,7,14,30,90,400]
-	all_churn_data_gt0["freq_bucket"] = all_churn_data_gt0["mean_freq"]
-	all_churn_data_gt0.freq_bucket = pd.cut(all_churn_data_gt0.freq_bucket, buckets)
-
-	unique_buckets = list(set(all_churn_data_gt0.freq_bucket.order()))[1:]
-
-	print unique_buckets
-
-	# print all_churn_data_gt0.iloc[np.where(all_churn_data_gt0.freq_bucket == unique_buckets[1])[0]]
-
-
-	kmf_buckets = []
-	for bucket in unique_buckets:
-		indices_ = np.where(all_churn_data_gt0.freq_bucket == bucket)
-		T = all_churn_data_gt0['duration'].iloc[indices_]
-		C = all_churn_data_gt0['churn'].iloc[indices_]
-		kmf = KaplanMeierFitter()
-		kmf.fit(T, event_observed = C, label=bucket)
-		kmf_buckets.append(kmf)
-
-	print len(kmf_buckets)
-
-	for jj, kmf_ in enumerate(kmf_buckets):
-		print kmf_, kmf_.median_
-		if jj==0:
-			ax = kmf_.plot()
-		else:
-			kmf_.plot(ax=ax)
-
 if __name__ == '__main__':
  	main(sys.argv[1:])
- 	df = pd.read_csv(filename)
-	print df.shape
-	df = df.dropna()
-	print df.shape
-
-	df['first_purch_date'] = pd.to_datetime(df['first_purch_date'])
-	df['last_purch_date'] = pd.to_datetime(df['last_purch_date'])
-
-	print "Getting churn data...."
-
-	all_churn_data = get_churn_data(df, "first_purch_date", "last_purch_date")
-
-	all_churn_data_gt0 = all_churn_data[(all_churn_data.duration > 0) & (all_churn_data.std_freq >=0) & (all_churn_data.mean_freq > 0)]
-
-	buckets = [0,7,14,30,90,400]
-	all_churn_data_gt0["freq_bucket"] = all_churn_data_gt0["mean_freq"]
-	all_churn_data_gt0.freq_bucket = pd.cut(all_churn_data_gt0.freq_bucket, buckets)
-
-	unique_buckets = list(set(all_churn_data_gt0.freq_bucket.order()))[1:]
-
-	print unique_buckets
-
-	# print all_churn_data_gt0.iloc[np.where(all_churn_data_gt0.freq_bucket == unique_buckets[1])[0]]
-
-
-	kmf_buckets = []
-	for bucket in unique_buckets:
-		indices_ = np.where(all_churn_data_gt0.freq_bucket == bucket)
-		T = all_churn_data_gt0['duration'].iloc[indices_]
-		C = all_churn_data_gt0['churn'].iloc[indices_]
-		kmf = KaplanMeierFitter()
-		kmf.fit(T, event_observed = C, label=bucket)
-		kmf_buckets.append(kmf)
-
-	print len(kmf_buckets)
-
-	for jj, kmf_ in enumerate(kmf_buckets):
-		print kmf_, kmf_.median_
-		if jj==0:
-			ax = kmf_.plot()
-		else:
-			kmf_.plot(ax=ax)
