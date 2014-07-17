@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import sys, getopt
+import scipy.interpolate
 import cPickle as pickle
 
 def LTV(survival_series, margin, discount_rate, freq_='daily'):
@@ -21,8 +22,17 @@ def LTV(survival_series, margin, discount_rate, freq_='daily'):
 
 	LTV = margin * sum_series
 
-	return_LTV
+	return LTV
 
+def interpolate_survival(surv_values, num_days):
+	y_interp = scipy.interpolate.interp1d(surv_values.index,surv_values.iloc[:,0])
+
+	survival_interp = []
+
+	for ii in xrange(num_days-1):
+		survival_interp.append(y_interp(ii+1))
+
+	return survival_interp
 
 def main(argv):
 
@@ -44,9 +54,20 @@ def main(argv):
 
 	print 'Output file is "', inputfile
 
-	kmf_files, buckets = pickle.load(open(inputfile,'rb'))
+	survival_series, buckets, daily_margin = pickle.load(open(inputfile,'rb'))
 
-	survival_series = [x.survival_function_ for x in kmf_files]
+	LTV_series = []
+
+	num_days = 300
+	discount_rate = .15
+
+	for ii, bucket in enumerate(buckets):
+		survival_interp = interpolate_survival(survival_series[ii], num_days)
+		LTV_temp = LTV(survival_interp, daily_margin[ii], discount_rate)
+		LTV_series.append(LTV_temp)
+
+	for ii in xrange(len(buckets)):
+		print "LTV for bucket "+buckets[ii]+" is ", LTV_series[ii]
 
 if __name__ == '__main__':
 	main(sys.argv[1:])

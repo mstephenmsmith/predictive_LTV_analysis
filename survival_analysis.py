@@ -57,22 +57,43 @@ def main(argv):
 
 	all_churn_data_gt0 = all_churn_data[(all_churn_data.duration > 0) & (all_churn_data.std_freq >=0) & (all_churn_data.mean_freq > 0)]
 
-	buckets = [0,7,14,30,90,400]
-	all_churn_data_gt0["freq_bucket"] = all_churn_data_gt0["mean_freq"]
-	all_churn_data_gt0.freq_bucket = pd.cut(all_churn_data_gt0.freq_bucket, buckets)
+	# buckets = [0,7,14,30,90,400]
+	# all_churn_data_gt0["freq_bucket"] = all_churn_data_gt0["mean_freq"]
+	# all_churn_data_gt0.freq_bucket = pd.cut(all_churn_data_gt0.freq_bucket, buckets)
 
-	unique_buckets = list(set(all_churn_data_gt0.freq_bucket.order()))[1:]
+	buckets = [0,10,20,30,50,1000]
+	all_churn_data_gt0["hukk_buckets"] = all_churn_data_gt0["hukk_count"]
+	all_churn_data_gt0.hukk_buckets = pd.cut(all_churn_data_gt0.hukk_buckets, buckets)
+
+	# unique_buckets = list(set(all_churn_data_gt0.freq_bucket.order()))[1:]
+	unique_buckets = list(set(all_churn_data_gt0.hukk_buckets.order()))[1:]
 
 	kmf_buckets = []
+
+	avg_durations = []
+	avg_total_spent = []
+	daily_margin = []
+
 	for bucket in unique_buckets:
-		indices_ = np.where(all_churn_data_gt0.freq_bucket == bucket)
+		# indices_ = np.where(all_churn_data_gt0.freq_bucket == bucket)
+		indices_ = np.where(all_churn_data_gt0.hukk_buckets == bucket)
+
+		avg_durations_temp = all_churn_data_gt0[all_churn_data_gt0.hukk_buckets == bucket].duration.mean()
+
+		avg_durations.append(avg_durations_temp)
+
+		avg_total_spent_temp = all_churn_data_gt0[all_churn_data_gt0.hukk_buckets == bucket].total_order_value.mean()
+
+		avg_total_spent.append(avg_total_spent_temp)
+
+		daily_margin.append(avg_total_spent_temp/float(avg_durations_temp))
+
 		T = all_churn_data_gt0['duration'].iloc[indices_]
 		C = all_churn_data_gt0['churn'].iloc[indices_]
+		
 		kmf = KaplanMeierFitter()
 		kmf.fit(T, event_observed = C, label=bucket)
 		kmf_buckets.append(kmf)
-
-	print type(kmf_buckets)
 
 	for jj, kmf_ in enumerate(kmf_buckets):
 		print kmf_, kmf_.median_
@@ -83,7 +104,7 @@ def main(argv):
 
 	kmf_values = [x.survival_function_ for x in kmf_buckets]
 
-	pickle.dump((kmf_values, unique_buckets), open('kmf_models.p', 'wb')) 
+	pickle.dump((kmf_values, unique_buckets, daily_margin), open('kmf_models.p', 'wb')) 
 
 	plt.savefig("survival_rates.png")
 
