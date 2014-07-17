@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import sys, getopt
 import matplotlib.pyplot as plt
+import cPickle as pickle
 from lifelines.estimation import KaplanMeierFitter
 
 def get_churn_data(df, min_date, max_date, time_to_churn = 1):
@@ -71,6 +72,8 @@ def main(argv):
 		kmf.fit(T, event_observed = C, label=bucket)
 		kmf_buckets.append(kmf)
 
+	print type(kmf_buckets)
+
 	for jj, kmf_ in enumerate(kmf_buckets):
 		print kmf_, kmf_.median_
 		if jj==0:
@@ -78,7 +81,11 @@ def main(argv):
 		else:
 			kmf_.plot(ax=ax)
 
-plt.savefig("survival_rates.png")
+	kmf_values = [x.survival_function_ for x in kmf_buckets]
+
+	pickle.dump((kmf_values, unique_buckets), open('kmf_models.p', 'wb')) 
+
+	plt.savefig("survival_rates.png")
 
 if __name__ == '__main__':
  	main(sys.argv[1:])
