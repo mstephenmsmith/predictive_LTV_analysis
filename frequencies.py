@@ -52,9 +52,7 @@ def main(argv):
 
 	df = pd.read_csv(inputfile)
 
-	# df = df.iloc[:5000,:]
-
-	df['created_on'] = pd.to_datetime(df['created_on']);
+	df['created_on'] = pd.to_datetime(df['created_on'])
 
 	print "Getting max and min creation dates..."
 
@@ -63,6 +61,9 @@ def main(argv):
 
 	min_created_on = df[['user_id','created_on']].groupby('user_id').min().reset_index()[['user_id','created_on']]
 	min_created_on.columns = ['user_id','first_purch_date']
+
+	hukk_counts = df[['user_id','created_on']].groupby('user_id').count().reset_index()[['user_id','created_on']]
+	hukk_counts.columns = ['user_id','hukk_count']
 
 	ns_in_day = float(8.64*10**13)
 
@@ -89,9 +90,11 @@ def main(argv):
 
 	output_df = pd.DataFrame(data=d_)
 
-	output_df = pd.merge(output_df, min_created_on, on = ['user_id'])
+	output_df = pd.merge(output_df, min_created_on, on = 'user_id')
 
-	output_df = pd.merge(output_df, max_created_on, on = ['user_id'])
+	output_df = pd.merge(output_df, max_created_on, on = 'user_id')
+
+	output_df = pd.merge(output_df, hukk_counts, on = 'user_id')
 
 	output_df.to_csv(outputfile)
 
