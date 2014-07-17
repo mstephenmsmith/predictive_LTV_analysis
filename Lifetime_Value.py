@@ -52,7 +52,7 @@ def main(argv):
 		else:
 			inputfile = arg
 
-	print 'Output file is "', inputfile
+	print 'Input file is "', inputfile
 
 	survival_series, buckets, daily_margin = pickle.load(open(inputfile,'rb'))
 
@@ -62,6 +62,7 @@ def main(argv):
 	discount_rate = .15
 
 	for ii, bucket in enumerate(buckets):
+		num_days = int(survival_series[ii].index[-1])
 		survival_interp = interpolate_survival(survival_series[ii], num_days)
 		LTV_temp = LTV(survival_interp, daily_margin[ii], discount_rate)
 		LTV_series.append(LTV_temp)
