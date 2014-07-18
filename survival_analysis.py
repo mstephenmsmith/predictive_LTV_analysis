@@ -113,38 +113,7 @@ def main(argv):
 
 	kmf_values = [x.survival_function_ for x in kmf_buckets]
 
-	for jj, surv in enumerate(kmf_values):
-		if jj==0:
-			ax = plt.plot(surv.index,surv.iloc[:,0], label = unique_buckets[jj])
-			plt.title('Survival Function for Cohorts')
-			plt.xlabel('Days of Survival')
-			plt.ylabel('Probability')
-
-		else:
-			plt.plot(surv.index,surv.iloc[:,0], label = unique_buckets[jj])
-
-	plt.legend()
-
 	pickle.dump((kmf_values, unique_buckets, counts_in_bucket, daily_margin), open('kmf_models.p', 'wb')) 
-
-	plt.savefig("survival_rates.png")
-
-	plt.clf()
-
-	pos = np.arange(len(unique_buckets))
-	width = 1.0     # gives histogram aspect to the bar diagram
-
-	ax = plt.axes()
-	ax.set_xticks(pos + (width / 2))
-	ax.set_xticklabels(unique_buckets)
-
-	plt.title('Counts for Number of Uses Cohorts')
-	plt.xlabel('Number of Uses Cohorts')
-	plt.ylabel('Count')
-
-	plt.bar(pos, counts_in_bucket, width)
-
-	plt.savefig("use_count_hist.png")
 
 if __name__ == '__main__':
  	main(sys.argv[1:])

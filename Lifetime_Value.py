@@ -71,20 +71,7 @@ def main(argv):
 	for ii in xrange(len(buckets)):
 		print "LTV for bucket "+buckets[ii]+" is ", LTV_series[ii]
 
-	pos = np.arange(len(buckets))
-	width = 1.0     # gives histogram aspect to the bar diagram
-
-	ax = plt.axes()
-	ax.set_xticks(pos + (width / 2))
-	ax.set_xticklabels(buckets)
-
-	plt.title('LTVs Number of Uses Cohorts')
-	plt.xlabel('Number of Uses Cohorts')
-	plt.ylabel('LTV ($)')
-
-	plt.bar(pos, LTV_series, width)
-
-	plt.savefig("LTV.png")
+	pickle.dump((LTV_series, survival_series, buckets, counts_in_bucket, daily_margin), open('ltv_survival_models.p', 'wb')) 
 
 if __name__ == '__main__':
 	main(sys.argv[1:])
