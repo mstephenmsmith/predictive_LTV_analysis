@@ -51,8 +51,6 @@ def main(argv):
 	df['first_purch_date'] = pd.to_datetime(df['first_purch_date'])
 	df['last_purch_date'] = pd.to_datetime(df['last_purch_date'])
 
-	print "Getting churn data...."
-
 	all_churn_data = get_churn_data(df, "first_purch_date", "last_purch_date")
 
 	all_churn_data_gt0 = all_churn_data[(all_churn_data.duration > 0) & (all_churn_data.std_freq >=0) & (all_churn_data.mean_freq > 0)]
@@ -61,22 +59,33 @@ def main(argv):
 	# all_churn_data_gt0["freq_bucket"] = all_churn_data_gt0["mean_freq"]
 	# all_churn_data_gt0.freq_bucket = pd.cut(all_churn_data_gt0.freq_bucket, buckets)
 
-	buckets = [0,10,20,30,50,1000]
+	buckets = [0,10,20,30,50,75,100,200,np.max(all_churn_data_gt0["hukk_count"])]
 	all_churn_data_gt0["hukk_buckets"] = all_churn_data_gt0["hukk_count"]
+	all_churn_data_gt0 = all_churn_data_gt0.sort(columns = ["hukk_buckets"])
 	all_churn_data_gt0.hukk_buckets = pd.cut(all_churn_data_gt0.hukk_buckets, buckets)
 
+	xx = pd.cut(all_churn_data_gt0.hukk_buckets, buckets)
+
+	#print "Levels ",all_churn_data_gt0.hukk_buckets.levels
+
 	# unique_buckets = list(set(all_churn_data_gt0.freq_bucket.order()))[1:]
-	unique_buckets = list(set(all_churn_data_gt0.hukk_buckets.order()))[1:]
+
+	unique_buckets = list(xx.levels)
 
 	kmf_buckets = []
 
 	avg_durations = []
 	avg_total_spent = []
 	daily_margin = []
+	counts_in_bucket = []
 
 	for bucket in unique_buckets:
 		# indices_ = np.where(all_churn_data_gt0.freq_bucket == bucket)
 		indices_ = np.where(all_churn_data_gt0.hukk_buckets == bucket)
+
+		counts_in_bucket_temp = all_churn_data_gt0[all_churn_data_gt0.hukk_buckets == bucket].hukk_count.count()
+
+		counts_in_bucket.append(counts_in_bucket_temp)
 
 		avg_durations_temp = all_churn_data_gt0[all_churn_data_gt0.hukk_buckets == bucket].duration.mean()
 
@@ -95,18 +104,47 @@ def main(argv):
 		kmf.fit(T, event_observed = C, label=bucket)
 		kmf_buckets.append(kmf)
 
-	for jj, kmf_ in enumerate(kmf_buckets):
-		print kmf_, kmf_.median_
-		if jj==0:
-			ax = kmf_.plot()
-		else:
-			kmf_.plot(ax=ax)
+	# for jj, kmf_ in enumerate(kmf_buckets):
+	# 	print kmf_, kmf_.median_
+	# 	if jj==0:
+	# 		ax = kmf_.plot()
+	# 	else:
+	# 		kmf_.plot(ax=ax)
 
 	kmf_values = [x.survival_function_ for x in kmf_buckets]
 
-	pickle.dump((kmf_values, unique_buckets, daily_margin), open('kmf_models.p', 'wb')) 
+	for jj, surv in enumerate(kmf_values):
+		if jj==0:
+			ax = plt.plot(surv.index,surv.iloc[:,0], label = unique_buckets[jj])
+			plt.title('Survival Function for Cohorts')
+			plt.xlabel('Days of Survival')
+			plt.ylabel('Probability')
+
+		else:
+			plt.plot(surv.index,surv.iloc[:,0], label = unique_buckets[jj])
+
+	plt.legend()
+
+	pickle.dump((kmf_values, unique_buckets, counts_in_bucket, daily_margin), open('kmf_models.p', 'wb')) 
 
 	plt.savefig("survival_rates.png")
+
+	plt.clf()
+
+	pos = np.arange(len(unique_buckets))
+	width = 1.0     # gives histogram aspect to the bar diagram
+
+	ax = plt.axes()
+	ax.set_xticks(pos + (width / 2))
+	ax.set_xticklabels(unique_buckets)
+
+	plt.title('Counts for Number of Uses Cohorts')
+	plt.xlabel('Number of Uses Cohorts')
+	plt.ylabel('Count')
+
+	plt.bar(pos, counts_in_bucket, width)
+
+	plt.savefig("use_count_hist.png")
 
 if __name__ == '__main__':
  	main(sys.argv[1:])
