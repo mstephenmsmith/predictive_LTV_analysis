@@ -29,12 +29,13 @@ def get_churn_data(df, min_date, max_date, time_to_churn):
 def main(inputfile, outputfile, buckets, time_to_churn):
 
 	df = pd.read_csv(inputfile)
+
 	df = df.dropna()
 
-	df=df.rename(columns = {'hukk_count':'use_count'})
+	# df=df.rename(columns = {'hukk_count':'use_count'})
 
-	df['first_use_date'] = pd.to_datetime(df['first_purch_date'])
-	df['last_use_date'] = pd.to_datetime(df['last_purch_date'])
+	df['first_use_date'] = pd.to_datetime(df['first_use_date'])
+	df['last_use_date'] = pd.to_datetime(df['last_use_date'])
 
 	all_churn_data = get_churn_data(df, "first_use_date", "last_use_date", time_to_churn)
 
@@ -103,7 +104,7 @@ def main(inputfile, outputfile, buckets, time_to_churn):
 
 	df_final = all_churn_data_gt0
 
-	df_final = df_final.dropna()
+	# df_final = df_final.dropna()
 
 	df_final.to_csv('./data/surv_feature_matrix.csv')
 

@@ -29,18 +29,22 @@ def run_model(Model, X_train, X_test, y_train, y_test):
 def main():
 	df = pd.read_csv('/Users/mstephenmsmith/Zipfian/capstone_project/data/final_feature_matrix.csv')
 
+	df_att = pd.read_csv('/Users/mstephenmsmith/Zipfian/capstone_project/data/user_attributes.csv')
+
+	df = pd.merge(df, df_att[['user_id','user_source']], on = 'user_id', how = 'left')
+
 	store_dummies = pd.core.reshape.get_dummies(df['most_used_store'])
+
+	source_dummies = pd.core.reshape.get_dummies(df['user_source'])
 
 	# X = df[['mean_freq','num_items_purch','first_purchase_amount']]
 
 	X = df[['mean_freq','std_freq','first_purchase_amount']]
 
-	X = pd.concat([X, store_dummies], axis = 1)
+	X = pd.concat([X, store_dummies, source_dummies], axis = 1)
 
-	print df.LTV
-
-	# label = np.where(df.LTV<np.mean(df.LTV),1,0)
-	label = np.where(df.LTV<250.,1,0)
+	#label = np.where(df.LTV<np.mean(df.LTV),1,0)
+	label = np.where(df.LTV<300.,1,0)
 
 	print Counter(label)
 

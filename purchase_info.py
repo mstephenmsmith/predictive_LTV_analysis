@@ -23,6 +23,12 @@ def main(inputfile, outputfile):
 		tmin = min(df[df['user_id']==user]['transaction_date'])
 		first_purchase_amounts.append(df[(df['user_id']==user) & (df['transaction_date']==tmin)]['total_order_value'].iloc[0])
 
+	max_created_on = df[['user_id','transaction_date']].groupby('user_id').max().reset_index()[['user_id','transaction_date']]
+	max_created_on.columns = ['user_id','last_purch_date']
+
+	min_created_on = df[['user_id','transaction_date']].groupby('user_id').min().reset_index()[['user_id','transaction_date']]
+	min_created_on.columns = ['user_id','first_purch_date']
+
 	temp_list = map(list, zip(*[users,first_purchase_amounts]))
 
 	first_purchase_amount_df = pd.DataFrame(temp_list,columns=['user_id','first_purchase_amount'])
@@ -34,6 +40,8 @@ def main(inputfile, outputfile):
 	df_purchase_sum.columns = ['user_id','num_items_purch','total_order_value','commission_value']
 
 	final_df = pd.merge(df_purchase_sum, first_purchase_amount_df, on='user_id')
+	final_df = pd.merge(final_df,max_created_on, on='user_id')
+	final_df = pd.merge(final_df,min_created_on, on='user_id')
 	final_df = pd.merge(final_df, most_used_store, on='user_id')
 
 	final_df.to_csv(outputfile)
