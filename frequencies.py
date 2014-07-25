@@ -29,41 +29,24 @@ def get_means_medians(df, user_id):
 
 	return user_id, mean_temp, median_temp, std_temp
 
-def main(argv):
-
-	inputfile = ''
-	outputfile = ''
-	try:
-		opts, args = getopt.getopt(argv,"hi:o:",["ifile=","ofile="])
-	except getopt.GetoptError:
-		print 'test.py -i <inputfile> -o <outputfile>'
-		sys.exit(2)
-	for opt, arg in opts:
-		if opt == '-h':
-			print 'test.py -i <inputfile> -o <outputfile>'
-			sys.exit()
-		elif opt in ("-i", "--ifile"):
-			inputfile = arg
-		elif opt in ("-o", "--ofile"):
-			outputfile = arg
-	print 'Input file is "', inputfile
-	print 'Output file is "', outputfile
-
+def main(inputfile, outputfile):
 
 	df = pd.read_csv(inputfile)
 
 	df['created_on'] = pd.to_datetime(df['created_on'])
 
+	# df=df.rename(columns = {'hukk_id':'user_id'})
+
 	print "Getting max and min creation dates..."
 
 	max_created_on = df[['user_id','created_on']].groupby('user_id').max().reset_index()[['user_id','created_on']]
-	max_created_on.columns = ['user_id','last_purch_date']
+	max_created_on.columns = ['user_id','last_use_date']
 
 	min_created_on = df[['user_id','created_on']].groupby('user_id').min().reset_index()[['user_id','created_on']]
-	min_created_on.columns = ['user_id','first_purch_date']
+	min_created_on.columns = ['user_id','first_use_date']
 
-	hukk_counts = df[['user_id','created_on']].groupby('user_id').count().reset_index()[['user_id','created_on']]
-	hukk_counts.columns = ['user_id','hukk_count']
+	use_counts = df[['user_id','created_on']].groupby('user_id').count().reset_index()[['user_id','created_on']]
+	use_counts.columns = ['user_id','use_count']
 
 	ns_in_day = float(8.64*10**13)
 
@@ -94,9 +77,9 @@ def main(argv):
 
 	output_df = pd.merge(output_df, max_created_on, on = 'user_id')
 
-	output_df = pd.merge(output_df, hukk_counts, on = 'user_id')
+	output_df = pd.merge(output_df, use_counts, on = 'user_id')
 
 	output_df.to_csv(outputfile)
 
 if __name__ == '__main__':
-	main(sys.argv[1:])
+	main(inputfile, outputfile)

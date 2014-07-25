@@ -62,24 +62,7 @@ def plot_LTV_hist(LTV_series, unique_buckets, sav_name):
 
 	plt.clf()
 
-def main(argv):
-
-	inputfile = ''
-
-	try:
-		opts, args = getopt.getopt(argv,"hi:o:",["ifile=","ofile="])
-	except getopt.GetoptError:
-		print 'test.py -i <inputfile>'
-		sys.exit(2)
-
-	for opt, arg in opts:
-		if opt == '-h':
-			print 'test.py -i <inputfile>'
-			sys.exit()
-		else:
-			inputfile = arg
-
-	print 'Input file is "', inputfile
+def main(inputfile, outputfile=None):
 	
 	LTV_series, kmf_values, unique_buckets, counts_in_bucket, daily_margin = pickle.load(open(inputfile,'rb'))
 
@@ -91,4 +74,4 @@ def main(argv):
 
 
 if __name__ == '__main__':
-	main(sys.argv[1:])
+	main(inputfile)

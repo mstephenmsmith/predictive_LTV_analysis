@@ -1,11 +1,10 @@
 import pandas as pd
 import numpy as np
 import sys, getopt
-import matplotlib.pyplot as plt
 import cPickle as pickle
 from lifelines.estimation import KaplanMeierFitter
 
-def get_churn_data(df, min_date, max_date, time_to_churn = 1):
+def get_churn_data(df, min_date, max_date, time_to_churn):
 	
 	ns_in_day = float(8.64*10**13)
 	
@@ -27,31 +26,17 @@ def get_churn_data(df, min_date, max_date, time_to_churn = 1):
 	return df
 
 
-def main(argv):
-
-	inputfile = ''
-	outputfile = ''
-
-	try:
-		opts, args = getopt.getopt(argv,"hi:o:",["ifile=","ofile="])
-	except getopt.GetoptError:
-		print 'test.py -i <inputfile>'
-		sys.exit(2)
-
-	for opt, arg in opts:
-		if opt == '-h':
-			print 'test.py -i <inputfile>'
-			sys.exit()
-		else:
-			inputfile = arg
+def main(inputfile, outputfile, buckets, time_to_churn):
 
 	df = pd.read_csv(inputfile)
 	df = df.dropna()
 
-	df['first_purch_date'] = pd.to_datetime(df['first_purch_date'])
-	df['last_purch_date'] = pd.to_datetime(df['last_purch_date'])
+	df=df.rename(columns = {'hukk_count':'use_count'})
 
-	all_churn_data = get_churn_data(df, "first_purch_date", "last_purch_date")
+	df['first_use_date'] = pd.to_datetime(df['first_purch_date'])
+	df['last_use_date'] = pd.to_datetime(df['last_purch_date'])
+
+	all_churn_data = get_churn_data(df, "first_use_date", "last_use_date", time_to_churn)
 
 	all_churn_data_gt0 = all_churn_data[(all_churn_data.duration > 0) & (all_churn_data.std_freq >=0) & (all_churn_data.mean_freq > 0)]
 
@@ -59,14 +44,15 @@ def main(argv):
 	# all_churn_data_gt0["freq_bucket"] = all_churn_data_gt0["mean_freq"]
 	# all_churn_data_gt0.freq_bucket = pd.cut(all_churn_data_gt0.freq_bucket, buckets)
 
-	buckets = [0,10,20,30,50,75,100,200,np.max(all_churn_data_gt0["hukk_count"])]
-	all_churn_data_gt0["hukk_buckets"] = all_churn_data_gt0["hukk_count"]
-	all_churn_data_gt0 = all_churn_data_gt0.sort(columns = ["hukk_buckets"])
-	all_churn_data_gt0.hukk_buckets = pd.cut(all_churn_data_gt0.hukk_buckets, buckets)
+	# buckets = [0,10,20,30,50,75,100,200,np.max(all_churn_data_gt0["use_count"])]
+	# buckets = [0,10,20,30,50,75,100,200,np.max(all_churn_data_gt0["use_count"])]
+	all_churn_data_gt0["use_buckets"] = all_churn_data_gt0["use_count"]
+	all_churn_data_gt0 = all_churn_data_gt0.sort(columns = ["use_buckets"])
+	all_churn_data_gt0.use_buckets = pd.cut(all_churn_data_gt0.use_buckets, buckets)
 
-	xx = pd.cut(all_churn_data_gt0.hukk_buckets, buckets)
+	xx = pd.cut(all_churn_data_gt0.use_buckets, buckets)
 
-	#print "Levels ",all_churn_data_gt0.hukk_buckets.levels
+	#print "Levels ",all_churn_data_gt0.use_buckets.levels
 
 	# unique_buckets = list(set(all_churn_data_gt0.freq_bucket.order()))[1:]
 
@@ -81,17 +67,17 @@ def main(argv):
 
 	for bucket in unique_buckets:
 		# indices_ = np.where(all_churn_data_gt0.freq_bucket == bucket)
-		indices_ = np.where(all_churn_data_gt0.hukk_buckets == bucket)
+		indices_ = np.where(all_churn_data_gt0.use_buckets == bucket)
 
-		counts_in_bucket_temp = all_churn_data_gt0[all_churn_data_gt0.hukk_buckets == bucket].hukk_count.count()
+		counts_in_bucket_temp = all_churn_data_gt0[all_churn_data_gt0.use_buckets == bucket].use_count.count()
 
 		counts_in_bucket.append(counts_in_bucket_temp)
 
-		avg_durations_temp = all_churn_data_gt0[all_churn_data_gt0.hukk_buckets == bucket].duration.mean()
+		avg_durations_temp = all_churn_data_gt0[all_churn_data_gt0.use_buckets == bucket].duration.mean()
 
 		avg_durations.append(avg_durations_temp)
 
-		avg_total_spent_temp = all_churn_data_gt0[all_churn_data_gt0.hukk_buckets == bucket].total_order_value.mean()
+		avg_total_spent_temp = all_churn_data_gt0[all_churn_data_gt0.use_buckets == bucket].total_order_value.mean()
 
 		avg_total_spent.append(avg_total_spent_temp)
 
@@ -113,7 +99,13 @@ def main(argv):
 
 	kmf_values = [x.survival_function_ for x in kmf_buckets]
 
-	pickle.dump((kmf_values, unique_buckets, counts_in_bucket, daily_margin), open('kmf_models.p', 'wb')) 
+	pickle.dump((kmf_values, unique_buckets, counts_in_bucket, daily_margin), open(outputfile, 'wb'))
+
+	df_final = all_churn_data_gt0
+
+	df_final = df_final.dropna()
+
+	df_final.to_csv('./data/surv_feature_matrix.csv')
 
 if __name__ == '__main__':
- 	main(sys.argv[1:])
+ 	main(inputfile, outputfile, buckets, time_to_churn)

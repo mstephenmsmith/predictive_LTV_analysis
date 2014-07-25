@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 import sys, getopt
 import scipy.interpolate
-import matplotlib.pyplot as plt
 import cPickle as pickle
 
 def LTV(survival_series, margin, discount_rate, freq_='daily'):
@@ -35,43 +34,36 @@ def interpolate_survival(surv_values, num_days):
 
 	return survival_interp
 
-def main(argv):
+def main(inputfile_surv, inputfile_feature, outputfile_LTV, outputfile_feature):
 
-	inputfile = ''
-	outputfile = ''
+	survival_series, buckets, counts_in_bucket, daily_margin = pickle.load(open(inputfile_surv,'rb'))
 
-	try:
-		opts, args = getopt.getopt(argv,"hi:o:",["ifile=","ofile="])
-	except getopt.GetoptError:
-		print 'test.py -i <inputfile>'
-		sys.exit(2)
-
-	for opt, arg in opts:
-		if opt == '-h':
-			print 'test.py -i <inputfile>'
-			sys.exit()
-		else:
-			inputfile = arg
-
-	print 'Input file is "', inputfile
-
-	survival_series, buckets, counts_in_bucket, daily_margin = pickle.load(open(inputfile,'rb'))
+	df = pd.read_csv(inputfile_feature)
 
 	LTV_series = []
 
 	num_days = 300
 	discount_rate = .15
 
+	df['LTV'] = 0
+
+	df = df.set_index('user_id')
+
 	for ii, bucket in enumerate(buckets):
 		num_days = int(survival_series[ii].index[-1])
 		survival_interp = interpolate_survival(survival_series[ii], num_days)
 		LTV_temp = LTV(survival_interp, daily_margin[ii], discount_rate)
 		LTV_series.append(LTV_temp)
+		users_temp = list(df[df['use_buckets']==bucket].index)
+		for user in users_temp:
+			margin_temp = df.ix[user, 'total_order_value']/float(df.ix[user, 'duration'])
+			LTV_temp = LTV(survival_interp, margin_temp, discount_rate)
+			df.ix[user, 'LTV'] = LTV_temp
 
-	for ii in xrange(len(buckets)):
-		print "LTV for bucket "+buckets[ii]+" is ", LTV_series[ii]
+	pickle.dump((LTV_series, survival_series, buckets, counts_in_bucket, daily_margin), open(outputfile_LTV, 'wb'))
 
-	pickle.dump((LTV_series, survival_series, buckets, counts_in_bucket, daily_margin), open('ltv_survival_models.p', 'wb')) 
+	df.to_csv(outputfile_feature)
+	
 
 if __name__ == '__main__':
-	main(sys.argv[1:])
+	main(inputfile_surv, inputfile_feature, outputfile_LTV, outputfile_feature)
