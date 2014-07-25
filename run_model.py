@@ -7,7 +7,6 @@ import combine_freq_purch_info
 import survival_analysis
 import lifetime_value
 import plotting
-import run_LR
 import model_pred
 
 start_time = time.time()

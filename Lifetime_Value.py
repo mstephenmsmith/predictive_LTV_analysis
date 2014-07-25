@@ -42,7 +42,7 @@ def main(inputfile_surv, inputfile_feature, outputfile_LTV, outputfile_feature):
 
 	LTV_series = []
 
-	num_days = 300
+	num_days = 500
 	discount_rate = .15
 
 	df['LTV'] = 0

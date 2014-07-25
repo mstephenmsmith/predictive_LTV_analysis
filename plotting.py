@@ -62,11 +62,11 @@ def plot_LTV_hist(LTV_series, unique_buckets, sav_name):
 
 	plt.clf()
 
-def plot_roc_curves(scores_list, sav_name):
+def plot_roc_curves(scores_list, fprs_, tprs_, sav_name):
 
 	for ii, model in enumerate(scores_list):
-		fpr = model[6]
-		tpr = model[7]
+		fpr = fprs_[ii]
+		tpr = tprs_[ii]
 		name = model[0]
 		roc_auc = model[5]
 		plt.plot(fpr,tpr, label=name+' (area = %0.2f)' % roc_auc)
@@ -84,7 +84,7 @@ def main(inputfile_LTV, inputfile_model, outputfile=None):
 	
 	LTV_series, kmf_values, unique_buckets, counts_in_bucket, daily_margin = pickle.load(open(inputfile_LTV,'rb'))
 
-	scores_list = pickle.load(open(inputfile_model,'rb'))
+	scores_list, tprs_, fprs_ = pickle.load(open(inputfile_model,'rb'))
 
 	plot_survival_rates(kmf_values, unique_buckets, "survival_rates.png")
 
@@ -92,7 +92,7 @@ def main(inputfile_LTV, inputfile_model, outputfile=None):
 
 	plot_LTV_hist(LTV_series, unique_buckets, "LTV.png")
 
-	plot_roc_curves(scores_list, 'roc_curves.png')
+	plot_roc_curves(scores_list, tprs_, fprs_, 'roc_curves.png')
 
 if __name__ == '__main__':
 	main(inputfile)

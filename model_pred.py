@@ -56,7 +56,7 @@ def main(inputfile_feat, inputfile_attribute, outputfile):
 	source_dummies = pd.core.reshape.get_dummies(df['user_source'])
 
 	X = df[['first_use_to_first_purch','mean_freq','std_freq','num_items_purch','first_purchase_amount']]
-	# X = df[['first_use_to_first_purch','mean_freq','std_freq','first_purchase_amount']]
+	#X = df[['first_use_to_first_purch','mean_freq','std_freq','first_purchase_amount']]
 
 
 	# X = pd.concat([X, store_dummies, source_dummies], axis = 1)
@@ -103,7 +103,7 @@ def main(inputfile_feat, inputfile_attribute, outputfile):
 			X_train, X_test = X.iloc[train_index], X.iloc[test_index]
 			y_train, y_test = label[train_index], label[test_index]
 			acc, f1, prec, rec, roc_auc, fpr, tpr, confusion_matrix_ = run_model(Model, X_train, X_test, y_train, y_test)
-			print "%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%s" % (acc, f1, prec, rec, roc_auc, name)
+			# print "%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%s" % (acc, f1, prec, rec, roc_auc, name)
 
 			accs_.append(acc)
 			f1s_.append(f1)
@@ -116,20 +116,25 @@ def main(inputfile_feat, inputfile_attribute, outputfile):
 
 		print "%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%s" % (np.mean(accs_), np.mean(f1s_), np.mean(precs_), np.mean(recs_), np.mean(roc_aucs_), name)
 
-		save_scores.append([name, np.mean(accs_), np.mean(f1s_), np.mean(precs_), np.mean(recs_), np.mean(roc_aucs_), fpr, tpr])
+		save_scores.append([name, np.mean(accs_), np.mean(f1s_), np.mean(precs_), np.mean(recs_), np.mean(roc_aucs_)])
 
 	# 	save_scores.append([name, acc, f1, prec, rec, roc_auc, fpr, tpr])
 
 	# save_scores = []
+	X_train, X_test, y_train, y_test = train_test_split(X, label, test_size=0.33)
 
-	# for name, Model in models.iteritems():
-	# 	acc, f1, prec, rec, roc_auc, fpr, tpr, confusion_matrix_ = run_model(Model, X_train, X_test, y_train, y_test)	
-	# 	print "%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%s" % (acc, f1, prec, rec, roc_auc, name)
-	# 	save_scores.append([name, acc, f1, prec, rec, roc_auc, fpr, tpr])
+	fprs_ = []
+	tprs_ = []
+
+	for name, Model in models.iteritems():
+		acc, f1, prec, rec, roc_auc, fpr, tpr, confusion_matrix_ = run_model(Model, X_train, X_test, y_train, y_test)	
+		# print "%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%s" % (acc, f1, prec, rec, roc_auc, name)
+		fprs_.append(fpr)
+		tprs_.append(tpr)
 
 	# df_save = pd.DataFrame(save_scores, columns=['name','accuracy','f1', 'precision','recall','roc_auc','fpr','tpr'])
 
-	pickle.dump(save_scores, open(outputfile, 'wb'))
+	pickle.dump((save_scores, fprs_, tprs_), open(outputfile, 'wb'))
 
 	# df_save.to_csv(outputfile)
 	# ax0.plot(np.transpose(for_roc_curve))
