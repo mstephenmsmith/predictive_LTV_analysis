@@ -29,12 +29,10 @@ def run_model(Model, X_train, X_test, y_train, y_test):
 		   precision_score(y_test, y_predict), \
 		   recall_score(y_test, y_predict), \
 		   roc_auc_score(y_test, y_predict), fpr, tpr, confusion_matrix(y_test, y_predict)
-		   # auc(fpr,tpr), fpr, tpr, confusion_matrix(y_test, y_predict)
 
 def main(inputfile_feat, inputfile_attribute, outputfile):
 	df = pd.read_csv(inputfile_feat)
 
-	# print int(df.first_use_to_first_purch[0])
 	df['first_purch_date'] = pd.to_datetime(df['first_purch_date'])
 	df['first_use_date'] = pd.to_datetime(df['first_use_date'])
 
@@ -44,8 +42,6 @@ def main(inputfile_feat, inputfile_attribute, outputfile):
 
 	df['first_use_to_first_purch'] = df['first_use_to_first_purch'].apply(lambda x: x.item()/float(8.64*10**13))
 
-	# df.first_use_to_first_purch= pd.DatetimeIndex(df.first_use_to_first_purch)
-	# df.first_use_to_first_purch = df.first_use_to_first_purch.astype(np.int64) / (float(86400.*10**9))
 
 	df_att = pd.read_csv(inputfile_attribute)
 
@@ -56,27 +52,12 @@ def main(inputfile_feat, inputfile_attribute, outputfile):
 	source_dummies = pd.core.reshape.get_dummies(df['user_source'])
 
 	X = df[['first_use_to_first_purch','mean_freq','std_freq','num_items_purch','first_purchase_amount']]
-	#X = df[['first_use_to_first_purch','mean_freq','std_freq','first_purchase_amount']]
-
 
 	# X = pd.concat([X, store_dummies, source_dummies], axis = 1)
-	#X = pd.concat([X, store_dummies, source_dummies], axis = 1)
 
-	# scaler = StandardScaler()
-	# X = scaler.fit_transform(X)
-
-	#label = np.where(df.LTV<np.mean(df.LTV),1,0)
 	label = np.where(df.LTV<200.,1,0)
 
 	print Counter(label)
-
-	X_train, X_test, y_train, y_test = train_test_split(X, label, test_size=0.33)
-
-	# clf = LR()
-
-	# clf.fit(X_train,y_train)
-
-	# print "Score: ",clf.score(X_test,y_test)
 
 	models = {"Logistic Regression": LR, \
 		  "kNN": KNeighborsClassifier, \
@@ -95,8 +76,6 @@ def main(inputfile_feat, inputfile_attribute, outputfile):
 		precs_ = []
 		recs_ = []
 		roc_aucs_ = []
-		# fprs_ = []
-		# tprs_= []
 
 		for train_index, test_index in kf:
 
@@ -110,17 +89,13 @@ def main(inputfile_feat, inputfile_attribute, outputfile):
 			precs_.append(prec)
 			recs_.append(rec)
 			roc_aucs_.append(roc_auc)
-			# fprs_.append(fpr)
-			# tprs_.append(tpr)
 			roc_aucs_.append(roc_auc)
 
 		print "%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%s" % (np.mean(accs_), np.mean(f1s_), np.mean(precs_), np.mean(recs_), np.mean(roc_aucs_), name)
 
 		save_scores.append([name, np.mean(accs_), np.mean(f1s_), np.mean(precs_), np.mean(recs_), np.mean(roc_aucs_)])
 
-	# 	save_scores.append([name, acc, f1, prec, rec, roc_auc, fpr, tpr])
 
-	# save_scores = []
 	X_train, X_test, y_train, y_test = train_test_split(X, label, test_size=0.33)
 
 	fprs_ = []
@@ -128,24 +103,7 @@ def main(inputfile_feat, inputfile_attribute, outputfile):
 
 	for name, Model in models.iteritems():
 		acc, f1, prec, rec, roc_auc, fpr, tpr, confusion_matrix_ = run_model(Model, X_train, X_test, y_train, y_test)	
-		# print "%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%s" % (acc, f1, prec, rec, roc_auc, name)
 		fprs_.append(fpr)
 		tprs_.append(tpr)
 
-	# df_save = pd.DataFrame(save_scores, columns=['name','accuracy','f1', 'precision','recall','roc_auc','fpr','tpr'])
-
 	pickle.dump((save_scores, fprs_, tprs_), open(outputfile, 'wb'))
-
-	# df_save.to_csv(outputfile)
-	# ax0.plot(np.transpose(for_roc_curve))
-	# ax1.plot(prec_roc_curve)
-
-
-	# plt.plot([0, 1], [0, 1], 'k--')
-	# plt.xlim([0.0, 1.0])
-	# plt.ylim([0.0, 1.05])
-	# plt.xlabel('False Positive Rate')
-	# plt.ylabel('True Positive Rate')
-	# plt.title('Receiver operating characteristic')
-	# plt.legend(loc="lower right")
-	# plt.show()

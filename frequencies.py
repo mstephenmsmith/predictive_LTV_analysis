@@ -35,8 +35,6 @@ def main(inputfile, outputfile):
 
 	df['created_on'] = pd.to_datetime(df['created_on'])
 
-	# df=df.rename(columns = {'hukk_id':'user_id'})
-
 	print "Getting max and min creation dates..."
 
 	max_created_on = df[['user_id','created_on']].groupby('user_id').max().reset_index()[['user_id','created_on']]
