@@ -1,0 +1,13 @@
+*.pyc
+
+.DS_Store
+
+data
+
+.ipynb_checkpoints
+
+run_model.py
+
+__admin
+
+plots
