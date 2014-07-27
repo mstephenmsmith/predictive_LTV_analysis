@@ -34,14 +34,11 @@ def interpolate_survival(surv_values, num_days):
 
 	return survival_interp
 
-def main(inputfile_surv, inputfile_feature, outputfile_LTV, outputfile_feature):
+def main(inputfile_surv, inputfile_feature, outputfile_LTV, outputfile_feature, discount_rate = 0.15):
 
 	survival_series, buckets, counts_in_bucket, daily_margin = pickle.load(open(inputfile_surv,'rb'))
 
 	df = pd.read_csv(inputfile_feature)
-
-	num_days = 500
-	discount_rate = .15
 
 	df['LTV'] = 0
 

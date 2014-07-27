@@ -64,6 +64,10 @@ def plot_LTV_hist(LTV_series, bucket_names, bucket_vals, sav_name):
 
 def plot_roc_curves(scores_list, fprs_, tprs_, sav_name):
 
+	fig = plt.figure()
+	ax = fig.add_subplot(111)
+	ax.set_aspect('equal')
+
 	for ii, model in enumerate(scores_list):
 		fpr = fprs_[ii]
 		tpr = tprs_[ii]
@@ -73,7 +77,9 @@ def plot_roc_curves(scores_list, fprs_, tprs_, sav_name):
 
 	plt.plot([0, 1], [0, 1], 'k--')
 	plt.xlim([0.0, 1.0])
-	plt.ylim([0.0, 1.05])
+	plt.ylim([0.0, 1.0])
+
+
 	plt.xlabel('False Positive Rate')
 	plt.ylabel('True Positive Rate')
 	plt.title('Receiver operating characteristic')

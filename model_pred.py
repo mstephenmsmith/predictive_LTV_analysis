@@ -33,6 +33,7 @@ def get_feature_matrix_labels(df_main, df_att, LTV_split):
 	source_dummies = pd.core.reshape.get_dummies(df['user_source'])
 
 	X = df[['first_use_to_first_purch','mean_freq','std_freq','num_items_purch','first_purchase_amount']]
+	#X = df[['first_use_to_first_purch','mean_freq','std_freq','first_purchase_amount']]
 
 	# X = pd.concat([X, store_dummies, source_dummies], axis = 1)
 
@@ -43,7 +44,7 @@ def get_feature_matrix_labels(df_main, df_att, LTV_split):
 
 def run_model(Model, X_train, X_test, y_train, y_test):
 	if Model == LR:
-		m = Model(C=0.1)
+		m = Model(C=0.01)
 	elif Model == svm:
 		m = Model.SVC(kernel='rbf', probability=True)
 	else:
@@ -53,10 +54,11 @@ def run_model(Model, X_train, X_test, y_train, y_test):
 	probas_ = fit_.predict_proba(X_test)
 	fpr, tpr, thresholds = roc_curve(y_test, probas_[:,1])
 	return accuracy_score(y_test, y_predict), \
-		   f1_score(y_test, y_predict), \
-		   precision_score(y_test, y_predict), \
-		   recall_score(y_test, y_predict), \
-		   roc_auc_score(y_test, y_predict), fpr, tpr, confusion_matrix(y_test, y_predict)
+		f1_score(y_test, y_predict), \
+		precision_score(y_test, y_predict), \
+		recall_score(y_test, y_predict), \
+		roc_auc_score(y_test, probas_[:,1]), fpr, tpr, confusion_matrix(y_test, y_predict)
+		# auc(fpr,tpr), fpr, tpr, confusion_matrix(y_test, y_predict)
 
 def get_training_test_indices(labels, num_folds):
 
@@ -100,7 +102,7 @@ def get_fprs_tprs(X, labels, models):
 
 	# this function is mainly used to get fprs and tprs to be used for later plotting
 
-	X_train, X_test, y_train, y_test = train_test_split(X, labels, test_size=0.33)
+	X_train, X_test, y_train, y_test = train_test_split(X, labels, test_size=0.33, random_state=42)
 
 	fprs_ = []
 	tprs_ = []
@@ -113,13 +115,11 @@ def get_fprs_tprs(X, labels, models):
 	return fprs_, tprs_
 
 
-def main(inputfile_feat, inputfile_attribute, outputfile):
+def main(inputfile_feat, inputfile_attribute, outputfile, LTV_split = 200):
 	
 	df_main = pd.read_csv(inputfile_feat)
 
 	df_att = pd.read_csv(inputfile_attribute)
-
-	LTV_split = 200
 
 	X, labels = get_feature_matrix_labels(df_main, df_att, LTV_split)
 
