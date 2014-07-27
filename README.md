@@ -1,7 +1,7 @@
 ##Supervised Prediction of High Value Retail E-Commerce Customers Using Survival and LTV Analyses##
 
 ###Introduction and Usage:
-* The combination of the programs below produces a survival analysis, Lifetime Value (LTV) analysis of retail e-commerce customers. After getting LTV values for each customer, supervised learning techniques are used to predict high-value customers based on user and beahvioral attributes. The programs were built around the business model that a user can "save" a third-party retail item he/she likes to a database and can later purchase the product when it goes on sale. The retail ecommerce company then receives a commission from that sale.
+* The combination of the programs below produces a survival analysis, Lifetime Value (LTV) analysis of retail e-commerce customers. After getting LTV values for each customer, supervised learning techniques are used to predict high-value customers based on user and behavioral attributes. The programs were built around the business model that a user can "save" a third-party retail item he/she likes to a database and can later purchase the product when it goes on sale. The retail ecommerce company then receives a commission from that sale.
 * To conduct the full survival analysis, Lifetime Value (LTV) analysis, and prediction of high value customers, the programs should be run in sequential order as laid out below.
 
 ###frequencies.py
@@ -52,3 +52,4 @@
 
 ###plotting.py
 * __Main purpose__: Some plotting of survival functions, LTVs, and use of product count histograms.
+
