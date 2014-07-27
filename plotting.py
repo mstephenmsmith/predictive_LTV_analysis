@@ -4,17 +4,17 @@ import sys, getopt
 import matplotlib.pyplot as plt
 import cPickle as pickle
 
-def plot_survival_rates(kmf_values, unique_buckets, sav_name):
+def plot_survival_rates(kmf_values, bucket_names, sav_name):
 
 	for jj, surv in enumerate(kmf_values):
 		if jj==0:
-			ax = plt.plot(surv.index,surv.iloc[:,0], label = unique_buckets[jj])
+			ax = plt.plot(surv.index,surv.iloc[:,0], label = bucket_names[jj])
 			plt.title('Survival Function for Cohorts')
 			plt.xlabel('Days of Survival')
 			plt.ylabel('Probability')
 
 		else:
-			plt.plot(surv.index,surv.iloc[:,0], label = unique_buckets[jj])
+			plt.plot(surv.index,surv.iloc[:,0], label = bucket_names[jj])
 
 	plt.legend()
 
@@ -24,14 +24,14 @@ def plot_survival_rates(kmf_values, unique_buckets, sav_name):
 
 	plt.clf()
 
-def plot_use_count_hist(unique_buckets, counts_in_bucket, sav_name):
+def plot_use_count_hist(bucket_names, counts_in_bucket, sav_name):
 
-	pos = np.arange(len(unique_buckets))
+	pos = np.arange(len(bucket_names))
 	width = 1.0     # gives histogram aspect to the bar diagram
 
 	ax = plt.axes()
 	ax.set_xticks(pos + (width / 2))
-	ax.set_xticklabels(unique_buckets)
+	ax.set_xticklabels(bucket_names)
 
 	plt.title('Counts for Number of Uses Cohorts')
 	plt.xlabel('Number of Uses Cohorts')
@@ -43,20 +43,20 @@ def plot_use_count_hist(unique_buckets, counts_in_bucket, sav_name):
 
 	plt.clf()
 
-def plot_LTV_hist(LTV_series, unique_buckets, sav_name):
+def plot_LTV_hist(LTV_series, bucket_names, bucket_vals, sav_name):
 
-	pos = np.arange(len(unique_buckets))
+	pos = np.arange(len(bucket_names))
 	width = 1.0     # gives histogram aspect to the bar diagram
 
 	ax = plt.axes()
 	ax.set_xticks(pos + (width / 2))
-	ax.set_xticklabels(unique_buckets)
+	ax.set_xticklabels(bucket_names)
 
 	plt.title('LTVs Number of Uses Cohorts')
 	plt.xlabel('Number of Uses Cohorts')
 	plt.ylabel('LTV ($)')
 
-	plt.bar(pos, LTV_series, width)
+	plt.bar(pos, np.histogram(LTV_series,bins=bucket_vals)[0], width)
 
 	plt.savefig(sav_name)
 
@@ -80,19 +80,19 @@ def plot_roc_curves(scores_list, fprs_, tprs_, sav_name):
 	plt.legend(loc="lower right")
 	plt.savefig(sav_name)
 
-def main(inputfile_LTV, inputfile_model, outputfile=None):
+def main(inputfile_LTV, inputfile_model, bucket_vals, folder_to_save, outputfile=None):
 	
-	LTV_series, kmf_values, unique_buckets, counts_in_bucket, daily_margin = pickle.load(open(inputfile_LTV,'rb'))
+	LTV_series, kmf_values, bucket_names, counts_in_bucket, daily_margin = pickle.load(open(inputfile_LTV,'rb'))
 
 	scores_list, tprs_, fprs_ = pickle.load(open(inputfile_model,'rb'))
 
-	plot_survival_rates(kmf_values, unique_buckets, "survival_rates.png")
+	plot_survival_rates(kmf_values, bucket_names, folder_to_save + "survival_rates.png")
 
-	plot_use_count_hist(unique_buckets, counts_in_bucket, "use_count_hist.png")
+	plot_use_count_hist(bucket_names, counts_in_bucket, folder_to_save + "use_count_hist.png")
 
-	plot_LTV_hist(LTV_series, unique_buckets, "LTV.png")
+	plot_LTV_hist(LTV_series, bucket_names, bucket_vals, folder_to_save + "LTV.png")
 
-	plot_roc_curves(scores_list, tprs_, fprs_, 'roc_curves.png')
+	plot_roc_curves(scores_list, tprs_, fprs_, folder_to_save + 'roc_curves.png')
 
 if __name__ == '__main__':
-	main(inputfile)
+	main(inputfile_LTV, inputfile_model)

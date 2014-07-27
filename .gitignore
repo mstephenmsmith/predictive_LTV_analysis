@@ -4,6 +4,12 @@
 
 data
 
+*.ipynb
+
+*.csv
+
+*.p
+
 .ipynb_checkpoints
 
 run_model.py

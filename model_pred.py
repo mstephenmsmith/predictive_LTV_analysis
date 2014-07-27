@@ -13,6 +13,34 @@ from sklearn.cross_validation import KFold, train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import auc, f1_score, accuracy_score, precision_score, recall_score, roc_curve, roc_auc_score, confusion_matrix
 
+
+def get_feature_matrix_labels(df_main, df_att, LTV_split):
+
+	df_main['first_purch_date'] = pd.to_datetime(df_main['first_purch_date'])
+	
+	df_main['first_use_date'] = pd.to_datetime(df_main['first_use_date'])
+
+	df_main['first_use_to_first_purch'] = df_main['first_purch_date'] - df_main['first_use_date']
+
+	df_main = df_main.iloc[np.where(df_main['first_use_to_first_purch']>0.)[0]]
+
+	df_main['first_use_to_first_purch'] = df_main['first_use_to_first_purch'].apply(lambda x: x.item()/float(8.64*10**13))
+
+	df = pd.merge(df_main, df_att[['user_id','user_source']], on = 'user_id', how = 'left')
+
+	store_dummies = pd.core.reshape.get_dummies(df['most_used_store'])
+
+	source_dummies = pd.core.reshape.get_dummies(df['user_source'])
+
+	X = df[['first_use_to_first_purch','mean_freq','std_freq','num_items_purch','first_purchase_amount']]
+
+	# X = pd.concat([X, store_dummies, source_dummies], axis = 1)
+
+	labels = np.where(df.LTV<LTV_split,1,0)
+
+	return X, labels
+
+
 def run_model(Model, X_train, X_test, y_train, y_test):
 	if Model == LR:
 		m = Model(C=0.1)
@@ -30,44 +58,15 @@ def run_model(Model, X_train, X_test, y_train, y_test):
 		   recall_score(y_test, y_predict), \
 		   roc_auc_score(y_test, y_predict), fpr, tpr, confusion_matrix(y_test, y_predict)
 
-def main(inputfile_feat, inputfile_attribute, outputfile):
-	df = pd.read_csv(inputfile_feat)
+def get_training_test_indices(labels, num_folds):
 
-	df['first_purch_date'] = pd.to_datetime(df['first_purch_date'])
-	df['first_use_date'] = pd.to_datetime(df['first_use_date'])
+	kf = KFold(labels.shape[0], n_folds=num_folds)
 
-	df['first_use_to_first_purch'] = df['first_purch_date'] - df['first_use_date']
+	return kf
 
-	df = df.iloc[np.where(df['first_use_to_first_purch']>0.)[0]]
+def get_scores(X, labels, models, kf):
 
-	df['first_use_to_first_purch'] = df['first_use_to_first_purch'].apply(lambda x: x.item()/float(8.64*10**13))
-
-
-	df_att = pd.read_csv(inputfile_attribute)
-
-	df = pd.merge(df, df_att[['user_id','user_source']], on = 'user_id', how = 'left')
-
-	store_dummies = pd.core.reshape.get_dummies(df['most_used_store'])
-
-	source_dummies = pd.core.reshape.get_dummies(df['user_source'])
-
-	X = df[['first_use_to_first_purch','mean_freq','std_freq','num_items_purch','first_purchase_amount']]
-
-	# X = pd.concat([X, store_dummies, source_dummies], axis = 1)
-
-	label = np.where(df.LTV<200.,1,0)
-
-	print Counter(label)
-
-	models = {"Logistic Regression": LR, \
-		  "kNN": KNeighborsClassifier, \
-		  "Naive Bayes": MultinomialNB, \
-		  "Random Forest": RF }#, \
-		  # "SVM": svm}
-
-	kf = KFold(label.shape[0], n_folds=3)
-
-	save_scores = []
+	scores_ = []
 	
 	for name, Model in models.iteritems():
 
@@ -80,7 +79,7 @@ def main(inputfile_feat, inputfile_attribute, outputfile):
 		for train_index, test_index in kf:
 
 			X_train, X_test = X.iloc[train_index], X.iloc[test_index]
-			y_train, y_test = label[train_index], label[test_index]
+			y_train, y_test = labels[train_index], labels[test_index]
 			acc, f1, prec, rec, roc_auc, fpr, tpr, confusion_matrix_ = run_model(Model, X_train, X_test, y_train, y_test)
 			# print "%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%s" % (acc, f1, prec, rec, roc_auc, name)
 
@@ -91,12 +90,17 @@ def main(inputfile_feat, inputfile_attribute, outputfile):
 			roc_aucs_.append(roc_auc)
 			roc_aucs_.append(roc_auc)
 
-		print "%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%s" % (np.mean(accs_), np.mean(f1s_), np.mean(precs_), np.mean(recs_), np.mean(roc_aucs_), name)
+		# print "%.4f\t%.4f\t%.4f\t%.4f\t%.4f\t%s" % (np.mean(accs_), np.mean(f1s_), np.mean(precs_), np.mean(recs_), np.mean(roc_aucs_), name)
 
-		save_scores.append([name, np.mean(accs_), np.mean(f1s_), np.mean(precs_), np.mean(recs_), np.mean(roc_aucs_)])
+		scores_.append([name, np.mean(accs_), np.mean(f1s_), np.mean(precs_), np.mean(recs_), np.mean(roc_aucs_)])
 
+	return scores_
 
-	X_train, X_test, y_train, y_test = train_test_split(X, label, test_size=0.33)
+def get_fprs_tprs(X, labels, models):
+
+	# this function is mainly used to get fprs and tprs to be used for later plotting
+
+	X_train, X_test, y_train, y_test = train_test_split(X, labels, test_size=0.33)
 
 	fprs_ = []
 	tprs_ = []
@@ -106,4 +110,36 @@ def main(inputfile_feat, inputfile_attribute, outputfile):
 		fprs_.append(fpr)
 		tprs_.append(tpr)
 
-	pickle.dump((save_scores, fprs_, tprs_), open(outputfile, 'wb'))
+	return fprs_, tprs_
+
+
+def main(inputfile_feat, inputfile_attribute, outputfile):
+	
+	df_main = pd.read_csv(inputfile_feat)
+
+	df_att = pd.read_csv(inputfile_attribute)
+
+	LTV_split = 200
+
+	X, labels = get_feature_matrix_labels(df_main, df_att, LTV_split)
+
+	print "Split of labels: ", Counter(labels)
+
+	models = {"Logistic Regression": LR, \
+		  "kNN": KNeighborsClassifier, \
+		  "Naive Bayes": MultinomialNB, \
+		  "Random Forest": RF }#, \
+		  # "SVM": svm}
+
+	num_folds = 3
+
+	kf = get_training_test_indices(labels, num_folds)
+
+	scores_ = get_scores(X, labels, models, kf)
+
+	fprs_, tprs_ = get_fprs_tprs(X, labels, models)
+
+	pickle.dump((scores_, fprs_, tprs_), open(outputfile, 'wb'))
+
+if __name__ == '__main__':
+	main(inputfile_feat, inputfile_attribute, outputfile)
