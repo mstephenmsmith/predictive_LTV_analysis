@@ -35,7 +35,7 @@ def get_feature_matrix_labels(df_main, df_att, LTV_split):
 	X = df[['first_use_to_first_purch','mean_freq','std_freq','num_items_purch','first_purchase_amount']]
 	#X = df[['first_use_to_first_purch','mean_freq','std_freq','first_purchase_amount']]
 
-	# X = pd.concat([X, store_dummies, source_dummies], axis = 1)
+	#X = pd.concat([X, source, store_dummies], axis = 1)
 
 	labels = np.where(df.LTV<LTV_split,1,0)
 
