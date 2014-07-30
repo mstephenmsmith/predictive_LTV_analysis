@@ -32,7 +32,7 @@ def get_feature_matrix_labels(df_main, df_att, LTV_split):
 
 	source_dummies = pd.core.reshape.get_dummies(df['user_source'])
 
-	X = df[['first_use_to_first_purch','mean_freq','std_freq','num_items_purch','first_purchase_amount']]
+	X = df[['use_count','first_use_to_first_purch','mean_freq','std_freq','num_items_purch','first_purchase_amount']]
 	#X = df[['first_use_to_first_purch','mean_freq','std_freq','first_purchase_amount']]
 
 	#X = pd.concat([X, source, store_dummies], axis = 1)

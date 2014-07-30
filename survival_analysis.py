@@ -25,6 +25,17 @@ def get_churn_data(df, min_date, max_date, time_to_churn):
 	
 	return df
 
+def kmf_calculation(df, bucket):
+
+	indices_ = np.where(df.use_buckets == bucket)
+
+	T = df['duration'].iloc[indices_]
+	C = df['churn'].iloc[indices_]
+	
+	kmf = KaplanMeierFitter()
+	kmf.fit(T, event_observed = C, label=bucket)
+	
+	return kmf
 
 def main(inputfile, outputfile, buckets, time_to_churn):
 
@@ -73,11 +84,8 @@ def main(inputfile, outputfile, buckets, time_to_churn):
 
 		daily_margin.append(avg_total_spent_temp/float(avg_durations_temp))
 
-		T = all_churn_data_gt0['duration'].iloc[indices_]
-		C = all_churn_data_gt0['churn'].iloc[indices_]
+		kmf = kmf_calculation(all_churn_data_gt0, bucket)
 		
-		kmf = KaplanMeierFitter()
-		kmf.fit(T, event_observed = C, label=bucket)
 		kmf_buckets.append(kmf)
 
 	kmf_values = [x.survival_function_ for x in kmf_buckets]

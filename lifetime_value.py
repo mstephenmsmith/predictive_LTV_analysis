@@ -44,9 +44,8 @@ def main(inputfile_surv, inputfile_feature, outputfile_LTV, outputfile_feature, 
 
 	df = df.set_index('user_id')
 
-	array_for_bubble = np.empty([len(buckets),3])
-
 	LTV_bucket_vals = []
+	bucket_medians = []
 
 	for ii, bucket in enumerate(buckets):
 		num_days = int(survival_series[ii].index[-1])
@@ -56,14 +55,10 @@ def main(inputfile_surv, inputfile_feature, outputfile_LTV, outputfile_feature, 
 			margin = df.ix[user, 'total_order_value']/365.
 			# margin = df.ix[user, 'total_order_value']/float(df.ix[user, 'duration'])
 			df.ix[user, 'LTV'] = LTV(survival_interp, margin, discount_rate)
-		array_for_bubble[ii,0] = np.median(list(df[df['use_buckets']==bucket]['use_count']))
-		array_for_bubble[ii,1] = len(list(df[df['use_buckets']==bucket]['LTV']))
-		array_for_bubble[ii,2] = np.sum(list(df[df['use_buckets']==bucket]['LTV']))
 		LTV_bucket_vals.append(np.mean(list(df[df['use_buckets']==bucket]['LTV'])))
+		bucket_medians.append(np.median(list(df[df['use_buckets']==bucket]['use_count'])))
 
-	pickle.dump((list(df['LTV']), survival_series, LTV_bucket_vals, buckets, counts_in_bucket, daily_margin), open(outputfile_LTV, 'wb'))
-
-	np.savetxt("array_for_bubble.csv", array_for_bubble, delimiter=",")
+	pickle.dump((list(df['LTV']), survival_series, LTV_bucket_vals, buckets, bucket_medians, counts_in_bucket, daily_margin), open(outputfile_LTV, 'wb'))
 
 	df.to_csv(outputfile_feature)
 	
